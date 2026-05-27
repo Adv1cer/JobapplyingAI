@@ -316,8 +316,8 @@ export default function DashboardPage() {
           {[
             { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', active: true },
             { label: 'My Resumes', icon: FileText, href: '/resumes' },
-            { label: 'Applications', icon: BriefcaseBusiness, href: '/dashboard' },
-            { label: 'Job Hunter Bots', icon: Bot, href: '/dashboard' },
+            // { label: 'Applications', icon: BriefcaseBusiness, href: '/dashboard' },
+            // { label: 'Job Hunter Bots', icon: Bot, href: '/dashboard' },
           ].map(({ label, icon: Icon, href, active }) => (
             <Link key={label} href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
