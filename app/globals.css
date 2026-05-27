@@ -58,6 +58,10 @@
   border-color: hsl(var(--border));
 }
 
+button, [role="button"], a, select, label[for], input[type="checkbox"], input[type="radio"] {
+  cursor: pointer;
+}
+
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
