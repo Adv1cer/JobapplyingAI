@@ -172,7 +172,7 @@ export default function ResumesPage() {
             <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
               <Send className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-bold text-gray-900 text-sm">JobAI</span>
+            <span className="font-bold text-gray-900 text-sm">SmartMatch AI</span>
           </div>
           <span className="text-gray-300">/</span>
           <span className="text-sm text-gray-600 font-medium">My Resume</span>
