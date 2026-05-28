@@ -35,7 +35,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#020b24] flex flex-col">
 
       {/* Top bar */}
-      <nav className="flex items-center justify-between px-8 py-5">
+      <nav className="flex items-center justify-between px-4 md:px-8 py-5">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-[9px] bg-blue-600/80 border border-blue-400/25 flex items-center justify-center shadow-[0_0_14px_rgba(59,130,246,0.35)]">
             <Send className="w-[14px] h-[14px] text-white" />

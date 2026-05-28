@@ -162,24 +162,27 @@ export default function ResumesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top bar */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 md:px-8 py-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
           <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="gap-1.5"><ArrowLeft className="w-4 h-4" />Dashboard</Button>
+            <Button variant="ghost" size="sm" className="gap-1.5 shrink-0">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
           </Link>
-          <Separator orientation="vertical" className="h-5" />
+          <Separator orientation="vertical" className="h-5 hidden sm:block" />
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center">
+            <div className="w-7 h-7 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
               <Send className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-bold text-gray-900 text-sm">SmartMatch AI</span>
+            <span className="font-bold text-gray-900 text-sm hidden md:inline">SmartMatch AI</span>
           </div>
-          <span className="text-gray-300">/</span>
-          <span className="text-sm text-gray-600 font-medium">My Resume</span>
+          <span className="text-gray-300 hidden md:inline">/</span>
+          <span className="text-sm text-gray-600 font-medium hidden sm:inline">My Resume</span>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 gap-2">
+        <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 gap-2 shrink-0">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saved ? 'บันทึกแล้ว ✓' : 'บันทึก'}
+          <span>{saved ? 'บันทึกแล้ว ✓' : 'บันทึก'}</span>
         </Button>
       </div>
 
@@ -200,12 +203,12 @@ export default function ResumesPage() {
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-6">
 
         {/* Personal Info */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-6">
           <SectionHeader icon={User} title="ข้อมูลส่วนตัว" />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
               <Label className="text-xs text-gray-500 mb-1.5 block">ชื่อ</Label>
               <Input placeholder="สมชาย" value={form.firstName} onChange={(e) => setField('firstName', e.target.value)} />
@@ -222,7 +225,7 @@ export default function ResumesPage() {
               <Label className="text-xs text-gray-500 mb-1.5 block">อีเมล (สำหรับจดหมายสมัครงาน)</Label>
               <Input type="email" placeholder="yourname@email.com" value={form.email} onChange={(e) => setField('email', e.target.value)} />
             </div>
-            <div className="col-span-2">
+            <div>
               <Label className="text-xs text-gray-500 mb-1.5 block">สรุปโปรไฟล์ (Professional Summary)</Label>
               <textarea
                 rows={3}
@@ -236,7 +239,7 @@ export default function ResumesPage() {
         </div>
 
         {/* Education */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-6">
           <SectionHeader icon={GraduationCap} title="การศึกษา" />
           <div className="space-y-4">
             {form.education.map((edu, i) => (
@@ -247,8 +250,8 @@ export default function ResumesPage() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="col-span-1 sm:col-span-2">
                     <Label className="text-xs text-gray-400 mb-1 block">สถาบัน</Label>
                     <Input placeholder="มหาวิทยาลัยเกษตรศาสตร์" value={edu.school} onChange={(e) => updateEdu(i, 'school', e.target.value)} className="h-9 text-sm" />
                   </div>
@@ -282,7 +285,7 @@ export default function ResumesPage() {
         </div>
 
         {/* Work History */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-6">
           <SectionHeader icon={Briefcase} title="ประวัติการทำงาน" />
           <div className="space-y-4">
             {form.workHistory.map((w, i) => (
@@ -293,7 +296,7 @@ export default function ResumesPage() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs text-gray-400 mb-1 block">บริษัท</Label>
                     <Input placeholder="บริษัท ABC จำกัด" value={w.company} onChange={(e) => updateWork(i, 'company', e.target.value)} className="h-9 text-sm" />
@@ -310,7 +313,7 @@ export default function ResumesPage() {
                     <Label className="text-xs text-gray-400 mb-1 block">สิ้นสุด (ว่างถ้าปัจจุบัน)</Label>
                     <Input type="month" value={w.endDate} onChange={(e) => updateWork(i, 'endDate', e.target.value)} className="h-9 text-sm" />
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <Label className="text-xs text-gray-400 mb-1 block">รายละเอียดงาน / ความสำเร็จ</Label>
                     <textarea
                       rows={3}
@@ -330,7 +333,7 @@ export default function ResumesPage() {
         </div>
 
         {/* Skills */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-6">
           <SectionHeader icon={Wrench} title="ทักษะ (Skills)" />
           <div className="flex gap-2 mb-4">
             <Input
@@ -356,7 +359,7 @@ export default function ResumesPage() {
         </div>
 
         {/* Languages */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-6">
           <SectionHeader icon={Globe} title="ภาษา" />
           <div className="space-y-3">
             {form.languages.map((l, i) => (
@@ -379,10 +382,10 @@ export default function ResumesPage() {
         </div>
 
         {/* Job Preferences */}
-        <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="bg-white rounded-xl border border-gray-100 p-4 md:p-6">
           <SectionHeader icon={Target} title="ตำแหน่งงานที่ต้องการ" />
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="col-span-1 sm:col-span-2">
               <Label className="text-xs text-gray-500 mb-1.5 block">ตำแหน่งงานที่ต้องการ</Label>
               <Input placeholder="Frontend Developer / Full Stack Engineer" value={form.desiredPosition}
                 onChange={(e) => setField('desiredPosition', e.target.value)} />
@@ -397,7 +400,7 @@ export default function ResumesPage() {
               <Input type="number" placeholder="80000" value={form.desiredSalaryMax}
                 onChange={(e) => setField('desiredSalaryMax', e.target.value)} />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <Label className="text-xs text-gray-500 mb-1.5 block">จังหวัดที่ต้องการทำงาน</Label>
               <select className="w-full h-10 text-sm border border-input rounded-md px-3 bg-background"
                 value={form.desiredProvince} onChange={(e) => setField('desiredProvince', e.target.value)}>

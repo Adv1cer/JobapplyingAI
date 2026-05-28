@@ -15,7 +15,7 @@ import {
   Filter, SortAsc, Eye, FileIcon, ScanLine, ChevronDown,
   ChevronUp, Loader2, CheckCircle2, AlertCircle, ExternalLink,
   Building2, Mail, Bookmark, BookmarkCheck, RefreshCw,
-  MailOpen, X, TrendingUp, AlertTriangle,
+  MailOpen, X, TrendingUp, AlertTriangle, Menu,
 } from 'lucide-react';
 import {
   api, jobsApi, scanApi, gmailApi,
@@ -168,6 +168,7 @@ export default function DashboardPage() {
   const [savedJobIds, setSavedJobIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'matches' | 'saved'>('matches');
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadDashboard = useCallback(async () => {
@@ -304,8 +305,21 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-52 bg-white border-r border-gray-100 flex flex-col py-5 px-3 shrink-0">
+      <aside className={`
+        fixed inset-y-0 left-0 z-40 w-52 bg-white border-r border-gray-100 flex flex-col py-5 px-3 shrink-0
+        transition-transform duration-200
+        md:relative md:translate-x-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         <Link href="/" className="flex items-center gap-2 px-3 mb-8">
           <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
             <Send className="w-4 h-4 text-white" />
@@ -355,30 +369,37 @@ export default function DashboardPage() {
       {/* Main */}
       <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-5 border-b border-gray-100 bg-white sticky top-0 z-10">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Application Pipeline</h1>
-            <p className="text-sm text-gray-500">AI-ranked matches from JobsDB · JobThai</p>
+        <div className="flex items-center justify-between px-4 md:px-8 py-4 md:py-5 border-b border-gray-100 bg-white sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-lg md:text-xl font-bold text-gray-900">Application Pipeline</h1>
+              <p className="text-xs md:text-sm text-gray-500 hidden sm:block">AI-ranked matches from JobsDB · JobThai</p>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             {scanSession?.status === 'running' && (
-              <div className="flex items-center gap-2 text-sm text-blue-600">
+              <div className="hidden sm:flex items-center gap-2 text-sm text-blue-600">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Scanning… {scanSession.processed}/{scanSession.totalFound}
+                <span className="hidden md:inline">Scanning… {scanSession.processed}/{scanSession.totalFound}</span>
+                <Loader2 className="w-4 h-4 animate-spin md:hidden text-blue-600" />
               </div>
             )}
             {scanSession?.status === 'done' && (
-              <div className="flex items-center gap-2 text-sm text-green-600">
+              <div className="hidden sm:flex items-center gap-2 text-sm text-green-600">
                 <CheckCircle2 className="w-4 h-4" />
-                พบ {scanSession.totalFound} งาน · บันทึก {scanSession.processed} รายการ
+                <span className="hidden md:inline">พบ {scanSession.totalFound} งาน · บันทึก {scanSession.processed} รายการ</span>
               </div>
             )}
-            <Separator orientation="vertical" className="h-8" />
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{user?.name ?? user?.email ?? '—'}</p>
-              </div>
-              <Avatar className="w-9 h-9">
+            <Separator orientation="vertical" className="h-8 hidden sm:block" />
+            <div className="flex items-center gap-2 md:gap-3">
+              <p className="text-sm font-medium text-gray-900 hidden md:block">{user?.name ?? user?.email ?? '—'}</p>
+              <Avatar className="w-8 h-8 md:w-9 md:h-9">
                 <AvatarFallback className="bg-blue-500 text-white text-sm">
                   {(user?.name ?? user?.email ?? 'U')[0].toUpperCase()}
                 </AvatarFallback>
@@ -387,7 +408,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="px-8 py-6 space-y-5">
+        <div className="px-4 md:px-8 py-6 space-y-5">
           {/* Scan Panel */}
           <div className="bg-white border border-gray-100 rounded-xl overflow-hidden">
             <button
@@ -512,7 +533,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
             {[
               { label: 'Total Scanned', value: stats?.totalScanned ?? 0, icon: Search, badge: '', badgeColor: '' },
               { label: 'AI Matches', value: stats?.aiMatches ?? 0, icon: Flame, badge: 'Pending', badgeColor: 'text-purple-600' },
@@ -548,7 +569,7 @@ export default function DashboardPage() {
 
           {/* Job list */}
           <div className="bg-white rounded-xl border border-gray-100">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between px-4 md:px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <h2 className="font-semibold text-gray-900">
                   {activeTab === 'matches' ? 'New Job Matches' : 'Saved Jobs'}
@@ -557,19 +578,19 @@ export default function DashboardPage() {
                   {activeTab === 'matches' ? `${pendingJobs.length} Pending` : `${savedJobIds.size} saved`}
                 </Badge>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 md:gap-2">
                 <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
-                  <Filter className="w-3 h-3" /> Filter
+                  <Filter className="w-3 h-3" /><span className="hidden sm:inline"> Filter</span>
                 </Button>
                 <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
-                  <SortAsc className="w-3 h-3" /> Sort by Fit
+                  <SortAsc className="w-3 h-3" /><span className="hidden sm:inline"> Sort by Fit</span>
                 </Button>
                 {jobs.length > 0 && activeTab === 'matches' && (
                   <Button variant="outline" size="sm"
                     className="gap-1.5 text-xs h-8 text-red-500 border-red-200 hover:bg-red-50"
                     onClick={clearAllJobs} disabled={clearing}>
                     {clearing ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
-                    Clear All
+                    <span className="hidden sm:inline">Clear All</span>
                   </Button>
                 )}
               </div>
@@ -616,7 +637,7 @@ export default function DashboardPage() {
       </main>
 
       {/* Right panel */}
-      <aside className="w-64 bg-white border-l border-gray-100 overflow-y-auto shrink-0 p-5 space-y-6">
+      <aside className="hidden xl:block w-64 bg-white border-l border-gray-100 overflow-y-auto shrink-0 p-5 space-y-6">
         <div>
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Job Sources</h3>
           <div className="space-y-2">
@@ -735,14 +756,14 @@ function JobCard({
   }
 
   return (
-    <div className="px-6 py-5 hover:bg-gray-50/50 transition-colors">
+    <div className="px-4 md:px-6 py-5 hover:bg-gray-50/50 transition-colors">
       {/* Header row */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-start gap-2 mb-3">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
           <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center font-bold text-gray-500 text-sm shrink-0">
             {job.company?.[0] ?? '?'}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-gray-900">{job.title}</span>
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matchColor(job.matchScore)}`}>
@@ -782,15 +803,15 @@ function JobCard({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0 ml-2">
-          <span className="text-xs text-gray-400">{timeAgo(job.scrapedAt)}</span>
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <span className="text-xs text-gray-400 hidden sm:inline">{timeAgo(job.scrapedAt)}</span>
           {/* Save button */}
           <button onClick={onSave} className={`p-1.5 rounded-lg transition-colors ${isSaved ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}>
             {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
           </button>
           {job.status === 'pending' ? (
             <>
-              <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onDiscard}>Discard</Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs hidden sm:flex" onClick={onDiscard}>Discard</Button>
               <Button size="sm" className="text-white h-8 text-xs bg-blue-600 hover:bg-blue-700" onClick={onConfirm}>Confirm</Button>
             </>
           ) : (
@@ -875,7 +896,7 @@ function JobCard({
       </div>
 
       {/* Cover letter + Resume */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="border border-gray-100 rounded-lg p-4">
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">AI Cover Letter</span>

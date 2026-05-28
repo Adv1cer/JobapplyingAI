@@ -226,7 +226,7 @@ export default function LandingPage() {
           </p>
 
           {/* CTAs */}
-          <div className="flex items-center gap-3 pointer-events-auto mt-1">
+          <div className="flex flex-wrap items-center justify-center gap-3 pointer-events-auto mt-1">
             <Link href="/register">
               <span className="inline-flex items-center gap-2 text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white px-6 py-[10px] rounded-full border border-blue-400/30 shadow-[0_0_24px_rgba(59,130,246,0.35)] transition-all duration-200 cursor-pointer">
                 Get Started Free →
@@ -249,7 +249,7 @@ export default function LandingPage() {
       )}
 
       {/* Header */}
-      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-7 py-4 pointer-events-none">
+      <header className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-4 sm:px-7 py-4 pointer-events-none">
         <div className="flex items-center gap-2.5 pointer-events-auto">
           <div className="w-8 h-8 rounded-[9px] bg-blue-600/75 backdrop-blur-sm border border-blue-400/25 flex items-center justify-center shadow-[0_0_14px_rgba(59,130,246,0.35)]">
             <Send className="w-[14px] h-[14px] text-white" />
