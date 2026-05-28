@@ -15,12 +15,15 @@ import {
   Filter, SortAsc, Eye, FileIcon, ScanLine, ChevronDown,
   ChevronUp, Loader2, CheckCircle2, AlertCircle, ExternalLink,
   Building2, Mail, Bookmark, BookmarkCheck, RefreshCw,
-  MailOpen, X, TrendingUp, AlertTriangle, Menu,
+  MailOpen, X, TrendingUp, AlertTriangle, Menu, Phone, Globe,
 } from 'lucide-react';
+import { ChatPanel } from '@/components/ChatPanel';
 import {
   api, jobsApi, scanApi, gmailApi,
   type JobMatch, type DashboardStats, type ScanSession, type GmailStatus,
 } from '@/lib/api';
+
+const PAGE_SIZE = 10;
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -38,9 +41,6 @@ const POSTED_WITHIN = [
   { value: '3', label: '3 วัน' }, { value: '7', label: '7 วัน' },
   { value: '14', label: '14 วัน' }, { value: '30', label: '30 วัน' },
 ];
-const COUNTRY_OPTIONS = [
-  { value: 'TH', label: '🇹🇭 ในประเทศ (JobsDB · JobThai)' },
-];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -48,7 +48,18 @@ function timeAgo(dateStr: string) {
   const diff = (Date.now() - new Date(dateStr).getTime()) / 1000 / 3600;
   if (diff < 1) return 'เมื่อกี้';
   if (diff < 24) return `${Math.floor(diff)}h ago`;
-  return `${Math.floor(diff / 24)}d ago`;
+  const days = Math.floor(diff / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+}
+
+/** Returns the best date to display: actual posting date from source, or fallback to scraped date */
+function jobDisplayDate(job: JobMatch): { dateStr: string; label: string } {
+  if (job.postedAt) {
+    return { dateStr: job.postedAt, label: 'ประกาศ' };
+  }
+  return { dateStr: job.scrapedAt, label: 'พบ' };
 }
 
 function matchColor(score: number) {
@@ -71,6 +82,88 @@ function sourceHomeUrl(source: string) {
     JobThai: 'https://www.jobthai.com',
   };
   return map[source] ?? '#';
+}
+
+// ── Skeleton Card ─────────────────────────────────────────────────────────────
+
+function JobCardSkeleton() {
+  return (
+    <div className="px-4 md:px-6 py-5 animate-pulse border-b border-gray-50 last:border-b-0">
+      {/* Header row */}
+      <div className="flex items-start gap-3 mb-3">
+        <div className="w-10 h-10 bg-gray-200 rounded-lg shrink-0" />
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="h-4 bg-gray-200 rounded w-40" />
+            <div className="h-5 bg-gray-200 rounded-full w-16" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 bg-gray-200 rounded w-28" />
+            <div className="h-3 bg-gray-200 rounded w-20" />
+            <div className="h-3 bg-gray-200 rounded-full w-14" />
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="h-7 bg-gray-200 rounded-md w-16 hidden sm:block" />
+          <div className="h-8 bg-gray-200 rounded-md w-20" />
+        </div>
+      </div>
+
+      {/* AI summary */}
+      <div className="space-y-1.5 mb-3 pl-13">
+        <div className="h-3 bg-gray-200 rounded w-full" />
+        <div className="h-3 bg-gray-200 rounded w-4/5" />
+      </div>
+
+      {/* Skill tags */}
+      <div className="flex gap-2 mb-3 flex-wrap">
+        <div className="h-5 bg-green-100 rounded-full w-20" />
+        <div className="h-5 bg-green-100 rounded-full w-24" />
+        <div className="h-5 bg-red-100 rounded-full w-18" />
+        <div className="h-5 bg-red-100 rounded-full w-16" />
+      </div>
+
+      {/* AI reasons */}
+      <div className="flex gap-1.5 mb-3 flex-wrap">
+        <div className="h-5 bg-blue-100 rounded-full w-24" />
+        <div className="h-5 bg-blue-100 rounded-full w-20" />
+        <div className="h-5 bg-blue-100 rounded-full w-28" />
+      </div>
+
+      {/* HR email row */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="h-3 bg-gray-200 rounded w-8" />
+        <div className="h-5 bg-gray-200 rounded w-36" />
+      </div>
+
+      {/* Cover letter + resume grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="border border-gray-100 rounded-lg p-4 space-y-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="h-3 bg-gray-200 rounded w-24" />
+            <div className="h-3 bg-gray-200 rounded w-12" />
+          </div>
+          <div className="h-3 bg-gray-200 rounded w-full" />
+          <div className="h-3 bg-gray-200 rounded w-5/6" />
+          <div className="h-3 bg-gray-200 rounded w-3/4" />
+          <div className="h-3 bg-gray-200 rounded w-4/5" />
+        </div>
+        <div className="border border-gray-100 rounded-lg p-4">
+          <div className="h-3 bg-gray-200 rounded w-28 mb-3" />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-10 bg-gray-200 rounded shrink-0" />
+            <div className="space-y-1.5 flex-1">
+              <div className="h-3 bg-gray-200 rounded w-32" />
+              <div className="flex gap-1">
+                <div className="h-4 bg-gray-200 rounded w-12" />
+                <div className="h-4 bg-gray-200 rounded w-10" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ── Gmail Draft Modal ─────────────────────────────────────────────────────────
@@ -139,7 +232,7 @@ function GmailDraftModal({
           <p className="text-xs text-gray-400">Draft จะถูกบันทึกใน Gmail ของคุณ — ต้องตรวจสอบและส่งเองเท่านั้น</p>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose} className="h-9 text-sm">ยกเลิก</Button>
-            <Button onClick={submit} disabled={loading} className="h-9 text-sm bg-blue-600 hover:bg-blue-700 gap-2">
+            <Button onClick={submit} disabled={loading} className="h-9 text-sm bg-blue-600 hover:bg-blue-700 gap-2 text-white">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <MailOpen className="w-4 h-4" />}
               บันทึก Draft
             </Button>
@@ -169,35 +262,85 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'matches' | 'saved'>('matches');
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [jobPage, setJobPage] = useState(1);
+  const [totalJobs, setTotalJobs] = useState(0);
+  const [hasMoreJobs, setHasMoreJobs] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
+  const [showExpired, setShowExpired] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stores a session ID discovered on initial load that needs polling to start
+  const pendingSessionIdRef = useRef<string | null>(null);
 
   const loadDashboard = useCallback(async () => {
+    setLoadingDashboard(true);
     try {
-      const [s, j, u, gmail, saved] = await Promise.all([
+      const [s, jPage, u, gmail, saved, latest] = await Promise.all([
         jobsApi.getDashboard(),
-        jobsApi.getMatches(),
+        jobsApi.getMatches(1, PAGE_SIZE, false),
         api.get<{ name?: string; email: string; plan: string }>('/auth/me'),
         gmailApi.getStatus(),
         jobsApi.getSaved(),
+        scanApi.getLatest(),     // ← auto-detect any running session
       ]);
       setStats(s);
-      setJobs(j);
+      setJobs(jPage.jobs);
+      setTotalJobs(jPage.total);
+      setHasMoreJobs(jPage.hasMore);
+      setJobPage(1);
       setUser(u);
       setGmailStatus(gmail);
-      setSavedJobIds(new Set(saved.map((s) => s.jobId ?? '').filter(Boolean)));
+      setSavedJobIds(new Set(saved.map((sv) => sv.jobId ?? '').filter(Boolean)));
+
+      // If a scan/reanalyze session is still running, resume polling
+      if (latest?.status === 'running') {
+        setScanSession(latest);
+        setScanning(true);
+        pendingSessionIdRef.current = latest.id;
+      }
     } catch {
       router.push('/login');
+    } finally {
+      setLoadingDashboard(false);
     }
   }, [router]);
 
-  useEffect(() => {
-    loadDashboard();
-    // Check if returning from Gmail OAuth callback
-    if (typeof window !== 'undefined' && window.location.search.includes('gmail=connected')) {
-      gmailApi.getStatus().then(setGmailStatus).catch(() => {});
-    }
-  }, [loadDashboard]);
+  /** Load next page and append to current list */
+  const loadMoreJobs = useCallback(async () => {
+    if (loadingMore || !hasMoreJobs) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = jobPage + 1;
+      const result = await jobsApi.getMatches(nextPage, PAGE_SIZE, showExpired);
+      setJobs((prev) => {
+        const existingIds = new Set(prev.map((j) => j.id));
+        const newJobs = result.jobs.filter((j) => !existingIds.has(j.id));
+        return [...prev, ...newJobs];
+      });
+      setJobPage(nextPage);
+      setTotalJobs(result.total);
+      setHasMoreJobs(result.hasMore);
+    } catch { /* silent */ }
+    finally { setLoadingMore(false); }
+  }, [loadingMore, hasMoreJobs, jobPage, showExpired]);
 
+  /** Reload page 1 (e.g. after scan done or toggle showExpired) */
+  const reloadJobs = useCallback(async (includeExpired = showExpired) => {
+    try {
+      const result = await jobsApi.getMatches(1, PAGE_SIZE, includeExpired);
+      setJobs(result.jobs);
+      setTotalJobs(result.total);
+      setHasMoreJobs(result.hasMore);
+      setJobPage(1);
+    } catch { /* silent */ }
+  }, [showExpired]);
+
+  // startPolling must be declared BEFORE the effects that reference it
   const startPolling = useCallback((sessionId: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
     pollRef.current = setInterval(async () => {
@@ -207,18 +350,73 @@ export default function DashboardPage() {
         if (session.status === 'done' || session.status === 'failed') {
           clearInterval(pollRef.current!);
           setScanning(false);
-          if (session.status === 'done') loadDashboard();
+          if (session.status === 'done') {
+            const [s] = await Promise.all([jobsApi.getDashboard(), reloadJobs()]);
+            setStats(s);
+          }
+        } else if (session.status === 'running') {
+          // Reload jobs every poll tick so 'analyzing'/'isReanalyzing' → 'pending' updates appear
+          reloadJobs();
         }
       } catch {
         clearInterval(pollRef.current!);
         setScanning(false);
       }
     }, 3000);
-  }, [loadDashboard]);
+  }, [reloadJobs]);
 
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
+  useEffect(() => {
+    loadDashboard();
+    if (typeof window !== 'undefined' && window.location.search.includes('gmail=connected')) {
+      gmailApi.getStatus().then(setGmailStatus).catch(() => {});
+    }
+  }, [loadDashboard]);
+
+  // After initial load finishes, start polling any session that was auto-detected
+  useEffect(() => {
+    if (!loadingDashboard && pendingSessionIdRef.current) {
+      const id = pendingSessionIdRef.current;
+      pendingSessionIdRef.current = null;
+      startPolling(id);
+    }
+  }, [loadingDashboard, startPolling]);
+
+  // ── Infinite scroll via IntersectionObserver ──────────────────────────────
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          // Debounce: wait 200ms before triggering load to avoid rapid firing
+          if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
+          scrollDebounceRef.current = setTimeout(() => {
+            loadMoreJobs();
+          }, 200);
+        }
+      },
+      { threshold: 0.1, rootMargin: '120px' },
+    );
+
+    observer.observe(sentinel);
+    return () => {
+      observer.disconnect();
+      if (scrollDebounceRef.current) clearTimeout(scrollDebounceRef.current);
+    };
+  }, [loadMoreJobs]);
+
   async function handleScan(force = false) {
+    const errors: Record<string, string> = {};
+    
+    if (!filters.keywords.trim()) errors.keywords = 'กรุณากรอกคำค้นหา';
+    if (!filters.salaryMin) errors.salaryMin = 'กรุณากรอกเงินเดือนขั้นต่ำ';
+    
+    setValidationErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    
     setScanning(true);
     setScanSession(null);
     try {
@@ -235,10 +433,10 @@ export default function DashboardPage() {
       const session = await scanApi.start(body);
       setScanSession(session);
 
-      // If returned from cache → already done, just reload
       if ((session as any).fromCache) {
         setScanning(false);
-        await loadDashboard();
+        const [s] = await Promise.all([jobsApi.getDashboard(), reloadJobs()]);
+        setStats(s);
       } else {
         startPolling(session.id);
       }
@@ -293,15 +491,31 @@ export default function DashboardPage() {
   async function connectGmail() {
     try {
       const { url } = await gmailApi.getAuthUrl();
+      if (!url) throw new Error('ไม่ได้รับ URL จาก server');
       window.location.href = url;
     } catch (err: any) {
-      alert(err.message ?? 'ไม่สามารถเชื่อมต่อ Gmail ได้');
+      const msg: string = err.message ?? '';
+      if (msg.includes('GOOGLE_CLIENT_ID') || msg.includes('OAuth') || msg.includes('ตั้งค่า')) {
+        alert(
+          '⚙️ Gmail ยังไม่ได้ตั้งค่า\n\n' +
+          'กรุณาเพิ่มใน backend .env:\n' +
+          '  GOOGLE_CLIENT_ID=...\n' +
+          '  GOOGLE_CLIENT_SECRET=...\n' +
+          '  GOOGLE_REDIRECT_URI=http://localhost:3001/api/gmail/callback\n\n' +
+          'จากนั้น restart backend และ Google Cloud Console → OAuth → Authorized redirect URIs',
+        );
+      } else {
+        alert(msg || 'ไม่สามารถเชื่อมต่อ Gmail ได้');
+      }
     }
   }
 
   const pendingJobs = jobs.filter((j) => j.status === 'pending');
   const scanProgress = scanSession && scanSession.totalFound > 0
     ? Math.round((scanSession.processed / scanSession.totalFound) * 100) : 0;
+
+  // Jobs to show in the matches tab
+  const matchJobs = activeTab === 'matches' ? jobs : jobs.filter((j) => savedJobIds.has(j.id));
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -330,8 +544,6 @@ export default function DashboardPage() {
           {[
             { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', active: true },
             { label: 'My Resumes', icon: FileText, href: '/resumes' },
-            // { label: 'Applications', icon: BriefcaseBusiness, href: '/dashboard' },
-            // { label: 'Job Hunter Bots', icon: Bot, href: '/dashboard' },
           ].map(({ label, icon: Icon, href, active }) => (
             <Link key={label} href={href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${active ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
@@ -384,20 +596,35 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2 md:gap-4">
             {scanSession?.status === 'running' && (
-              <div className="hidden sm:flex items-center gap-2 text-sm text-blue-600">
+              <div className="flex items-center gap-2 text-sm text-blue-600">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="hidden md:inline">Scanning… {scanSession.processed}/{scanSession.totalFound}</span>
-                <Loader2 className="w-4 h-4 animate-spin md:hidden text-blue-600" />
+                {scanSession.filters?.reanalyze
+                  ? <span className="hidden md:inline">วิเคราะห์ด้วย Resume ใหม่… {scanSession.processed}/{scanSession.totalFound}</span>
+                  : <span className="hidden md:inline">Scanning… {scanSession.processed}/{scanSession.totalFound}</span>
+                }
               </div>
             )}
             {scanSession?.status === 'done' && (
               <div className="hidden sm:flex items-center gap-2 text-sm text-green-600">
                 <CheckCircle2 className="w-4 h-4" />
-                <span className="hidden md:inline">พบ {scanSession.totalFound} งาน · บันทึก {scanSession.processed} รายการ</span>
+                {scanSession.filters?.reanalyze
+                  ? <span className="hidden md:inline">วิเคราะห์ใหม่เสร็จ {scanSession.processed} งาน ✓</span>
+                  : <span className="hidden md:inline">พบ {scanSession.totalFound} งาน · บันทึก {scanSession.processed} รายการ</span>
+                }
               </div>
             )}
             <Separator orientation="vertical" className="h-8 hidden sm:block" />
             <div className="flex items-center gap-2 md:gap-3">
+              <button
+                onClick={() => setChatOpen(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  chatOpen
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                }`}>
+                <Bot className="w-4 h-4" />
+                <span className="hidden sm:inline">AI Chat</span>
+              </button>
               <p className="text-sm font-medium text-gray-900 hidden md:block">{user?.name ?? user?.email ?? '—'}</p>
               <Avatar className="w-8 h-8 md:w-9 md:h-9">
                 <AvatarFallback className="bg-blue-500 text-white text-sm">
@@ -443,14 +670,17 @@ export default function DashboardPage() {
                     <Label className="text-xs text-gray-500 mb-1 block">คำค้นหา (ตำแหน่งงาน / ทักษะ)</Label>
                     <Input placeholder="เช่น React Developer, Node.js, Fullstack"
                       value={filters.keywords}
-                      onChange={(e) => setFilters({ ...filters, keywords: e.target.value })}
-                      className="h-9 text-sm" />
+                      onChange={(e) => { setFilters({ ...filters, keywords: e.target.value }); setValidationErrors({...validationErrors, keywords: ''}) }}
+                      className="h-9 text-sm"
+                      required />
+                    {validationErrors.keywords && <span className="text-xs text-red-500 mt-0.5 block">{validationErrors.keywords}</span>}
                   </div>
                   <div>
                     <Label className="text-xs text-gray-500 mb-1 block">จังหวัด</Label>
                     <select className="w-full h-9 text-sm border border-input rounded-md px-3 bg-background"
                       value={filters.province}
-                      onChange={(e) => setFilters({ ...filters, province: e.target.value })}>
+                      onChange={(e) => setFilters({ ...filters, province: e.target.value })}
+                      >
                       <option value="">ทั้งประเทศ</option>
                       {PROVINCES.map((p) => <option key={p} value={p}>{p}</option>)}
                     </select>
@@ -459,7 +689,8 @@ export default function DashboardPage() {
                     <Label className="text-xs text-gray-500 mb-1 block">ประเภทงาน</Label>
                     <select className="w-full h-9 text-sm border border-input rounded-md px-3 bg-background"
                       value={filters.jobType}
-                      onChange={(e) => setFilters({ ...filters, jobType: e.target.value })}>
+                      onChange={(e) => setFilters({ ...filters, jobType: e.target.value })}
+                      required>
                       {JOB_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>
@@ -467,7 +698,8 @@ export default function DashboardPage() {
                     <Label className="text-xs text-gray-500 mb-1 block">ประกาศเมื่อ</Label>
                     <select className="w-full h-9 text-sm border border-input rounded-md px-3 bg-background"
                       value={filters.postedWithin}
-                      onChange={(e) => setFilters({ ...filters, postedWithin: e.target.value })}>
+                      onChange={(e) => setFilters({ ...filters, postedWithin: e.target.value })}
+                      required>
                       {POSTED_WITHIN.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                   </div>
@@ -475,8 +707,10 @@ export default function DashboardPage() {
                     <Label className="text-xs text-gray-500 mb-1 block">เงินเดือนขั้นต่ำ (บาท)</Label>
                     <Input type="number" placeholder="เช่น 30000"
                       value={filters.salaryMin}
-                      onChange={(e) => setFilters({ ...filters, salaryMin: e.target.value })}
-                      className="h-9 text-sm" />
+                      onChange={(e) => { setFilters({ ...filters, salaryMin: e.target.value }); setValidationErrors({...validationErrors, salaryMin: ''}) }}
+                      className="h-9 text-sm"
+                      required />
+                    {validationErrors.salaryMin && <span className="text-xs text-red-500 mt-0.5 block">{validationErrors.salaryMin}</span>}
                   </div>
                   <div>
                     <Label className="text-xs text-gray-500 mb-1 block">เงินเดือนสูงสุด (บาท)</Label>
@@ -493,7 +727,18 @@ export default function DashboardPage() {
                         {scanning ? 'กำลัง Scan…' : 'เริ่ม Scan Now'}
                       </Button>
 
-                      {/* Cache age indicator + force refresh */}
+                      {scanSession?.status === 'running' && (
+                        <div className="flex-1 flex items-center gap-2">
+                          <div className="flex-1 bg-gray-100 rounded-full h-2">
+                            <div className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                              style={{ width: `${scanProgress}%` }} />
+                          </div>
+                          <p className="text-xs text-blue-600 whitespace-nowrap">
+                            วิเคราะห์ {scanSession.processed}/{scanSession.totalFound}
+                          </p>
+                        </div>
+                      )}
+
                       {!scanning && (scanSession as any)?.fromCache && (scanSession as any)?.cacheAgeMinutes != null && (
                         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
                           <span className="text-xs text-amber-700">
@@ -507,20 +752,12 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      {/* Latest session age (shown even without fromCache) */}
                       {!scanning && !(scanSession as any)?.fromCache && (scanSession as any)?.cacheAgeMinutes != null && (scanSession as any)?.status === 'done' && (
                         <span className="text-xs text-gray-400">
                           อัปเดตเมื่อ {(scanSession as any).cacheAgeMinutes} นาทีที่แล้ว
                         </span>
                       )}
                     </div>
-
-                    {scanSession?.status === 'running' && (
-                      <div className="flex-1 bg-gray-100 rounded-full h-2 max-w-xs">
-                        <div className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${scanProgress}%` }} />
-                      </div>
-                    )}
                     {scanSession?.status === 'failed' && (
                       <p className="text-sm text-red-500 flex items-center gap-1">
                         <AlertCircle className="w-4 h-4" />{scanSession.errorMessage ?? 'Scan failed'}
@@ -575,16 +812,19 @@ export default function DashboardPage() {
                   {activeTab === 'matches' ? 'New Job Matches' : 'Saved Jobs'}
                 </h2>
                 <Badge variant="secondary" className="text-xs">
-                  {activeTab === 'matches' ? `${pendingJobs.length} Pending` : `${savedJobIds.size} saved`}
+                  {activeTab === 'matches'
+                    ? `${totalJobs} งาน`
+                    : `${savedJobIds.size} saved`}
                 </Badge>
               </div>
               <div className="flex items-center gap-1.5 md:gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
-                  <Filter className="w-3 h-3" /><span className="hidden sm:inline"> Filter</span>
-                </Button>
-                <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
-                  <SortAsc className="w-3 h-3" /><span className="hidden sm:inline"> Sort by Fit</span>
-                </Button>
+                {activeTab === 'matches' && (
+                  <button
+                    onClick={() => { const next = !showExpired; setShowExpired(next); reloadJobs(next); }}
+                    className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors ${showExpired ? 'bg-red-50 text-red-600 border-red-200' : 'text-gray-500 border-gray-200 hover:bg-gray-50'}`}>
+                    {showExpired ? 'ซ่อนหมดอายุ' : 'แสดงหมดอายุ'}
+                  </button>
+                )}
                 {jobs.length > 0 && activeTab === 'matches' && (
                   <Button variant="outline" size="sm"
                     className="gap-1.5 text-xs h-8 text-red-500 border-red-200 hover:bg-red-50"
@@ -597,17 +837,29 @@ export default function DashboardPage() {
             </div>
 
             <div className="divide-y divide-gray-50">
-              {activeTab === 'matches' && jobs.length === 0 && !scanning && (
+              {/* Initial dashboard loading — show skeleton cards */}
+              {loadingDashboard && (
+                <>
+                  <JobCardSkeleton />
+                  <JobCardSkeleton />
+                  <JobCardSkeleton />
+                </>
+              )}
+
+              {/* Empty state: no jobs, not scanning, not loading */}
+              {!loadingDashboard && activeTab === 'matches' && jobs.length === 0 && !scanning && (
                 <div className="py-16 text-center space-y-3">
                   <ScanLine className="w-10 h-10 text-gray-300 mx-auto" />
                   <p className="text-sm text-gray-400 font-medium">ยังไม่มีงานที่จับคู่</p>
                   <p className="text-xs text-gray-400">กด <strong>Scan Now</strong> เพื่อเริ่มค้นหางาน</p>
                 </div>
               )}
-              {activeTab === 'matches' && scanning && jobs.length === 0 && (
-                <div className="py-16 text-center space-y-3">
-                  <Loader2 className="w-10 h-10 text-blue-400 mx-auto animate-spin" />
-                  <p className="text-sm text-gray-500">กำลังค้นหางานจากทุกแหล่ง…</p>
+
+              {/* Scanning but no jobs fetched yet */}
+              {!loadingDashboard && activeTab === 'matches' && scanning && jobs.length === 0 && (
+                <div className="py-8 text-center space-y-2">
+                  <Loader2 className="w-8 h-8 text-blue-400 mx-auto animate-spin" />
+                  <p className="text-sm text-gray-500">กำลังรวบรวมงานจาก JobsDB · JobThai…</p>
                   {scanSession && (
                     <p className="text-xs text-gray-400">
                       พบ {scanSession.totalFound} งาน · วิเคราะห์แล้ว {scanSession.processed} รายการ
@@ -616,8 +868,8 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* Job cards */}
-              {(activeTab === 'matches' ? jobs : jobs.filter((j) => savedJobIds.has(j.id))).map((job) => (
+              {/* Actual job cards */}
+              {!loadingDashboard && matchJobs.map((job) => (
                 <JobCard
                   key={job.id}
                   job={job}
@@ -631,6 +883,23 @@ export default function DashboardPage() {
                   onRegenerateLetter={() => regenerateCoverLetter(job.id)}
                 />
               ))}
+
+              {/* Infinite scroll sentinel — hidden div at the bottom */}
+              {activeTab === 'matches' && !loadingDashboard && (
+                <div ref={sentinelRef} className="py-0" aria-hidden="true">
+                  {loadingMore && (
+                    <div className="flex items-center justify-center gap-2 py-4 text-sm text-gray-400">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      กำลังโหลดงานเพิ่มเติม…
+                    </div>
+                  )}
+                  {!hasMoreJobs && jobs.length > 0 && !loadingMore && (
+                    <p className="text-center text-xs text-gray-300 py-3">
+                      แสดงครบทุกงานแล้ว ({totalJobs} รายการ)
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -707,6 +976,9 @@ export default function DashboardPage() {
         </div>
       </aside>
 
+      {/* AI Chat Panel */}
+      <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
+
       {/* Gmail Draft Modal */}
       {gmailDraftJob && (
         <GmailDraftModal
@@ -740,23 +1012,43 @@ function JobCard({
   onRegenerateLetter: () => void;
 }) {
   const [showLetter, setShowLetter] = useState(false);
-  const [hrContacts, setHrContacts] = useState<Array<{ email: string; firstName?: string; lastName?: string; position?: string; confidence?: number }> | null>(null);
+  const [hrContacts, setHrContacts] = useState<Array<{ email?: string; phone?: string; website?: string; type?: 'hr' | 'general'; source?: string; firstName?: string; lastName?: string; position?: string; confidence?: number }> | null>(null);
   const [hrLoading, setHrLoading] = useState(false);
   const [hrError, setHrError] = useState('');
+
+  // Show skeleton AI section when:
+  // - status=analyzing (Phase 1 of fresh scan — AI hasn't scored yet)
+  // - isReanalyzing=true (resume was updated → this job is queued for rescoring)
+  const isAnalyzing = job.status === 'analyzing' || job.isReanalyzing === true;
+  const { dateStr, label: dateLabel } = jobDisplayDate(job);
 
   async function lookupHrEmail() {
     setHrLoading(true); setHrError('');
     try {
       const res = await jobsApi.lookupHrEmail(job.id);
       setHrContacts(res.contacts);
-      if (res.contacts.length === 0) setHrError('ไม่พบอีเมล HR ในระบบ');
+      if (res.contacts.length === 0) setHrError('ไม่พบข้อมูลติดต่อ');
     } catch {
       setHrError('ค้นหาไม่สำเร็จ กรุณาลองใหม่');
     } finally { setHrLoading(false); }
   }
 
   return (
-    <div className="px-4 md:px-6 py-5 hover:bg-gray-50/50 transition-colors">
+    <div className={`px-4 md:px-6 py-5 transition-colors ${job.isExpired ? 'opacity-60 bg-gray-50/80' : 'hover:bg-gray-50/50'}`}>
+      {/* Expired / Stale banners */}
+      {job.isExpired && (
+        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-1.5 mb-3">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+          <span>งานนี้อาจหมดอายุแล้ว (ประกาศเกิน 30 วัน) — ลิงก์อาจใช้ไม่ได้</span>
+        </div>
+      )}
+      {!job.isExpired && job.isStale && (
+        <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-1.5 mb-3">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          <span>คะแนนอาจไม่ตรงกับ Resume ล่าสุด — <button onClick={onRegenerateLetter} className="underline underline-offset-2 font-medium">คลิกเพื่อวิเคราะห์ใหม่</button></span>
+        </div>
+      )}
+
       {/* Header row */}
       <div className="flex items-start gap-2 mb-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -765,10 +1057,17 @@ function JobCard({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-gray-900">{job.title}</span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matchColor(job.matchScore)}`}>
-                {job.matchScore}% MATCH
-              </span>
+              <span className={`font-semibold ${job.isExpired ? 'text-gray-400 line-through' : 'text-gray-900'}`}>{job.title}</span>
+              {/* Match score badge — skeleton when analyzing */}
+              {isAnalyzing ? (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100 animate-pulse">
+                  <Loader2 className="w-3 h-3 animate-spin" />กำลังวิเคราะห์…
+                </span>
+              ) : (
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${job.isStale ? 'text-gray-500 bg-gray-100 border border-gray-200' : matchColor(job.matchScore)}`}>
+                  {job.matchScore}% {job.isStale ? '(เก่า)' : 'MATCH'}
+                </span>
+              )}
               {job.remote && (
                 <span className="text-xs bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-full">Remote</span>
               )}
@@ -804,12 +1103,19 @@ function JobCard({
           </div>
         </div>
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          <span className="text-xs text-gray-400 hidden sm:inline">{timeAgo(job.scrapedAt)}</span>
+          <span className="text-xs text-gray-400 hidden sm:inline" title={new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}>
+            {dateLabel} {timeAgo(dateStr)}
+          </span>
           {/* Save button */}
-          <button onClick={onSave} className={`p-1.5 rounded-lg transition-colors ${isSaved ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'}`}>
+          <button onClick={onSave} disabled={isAnalyzing}
+            className={`p-1.5 rounded-lg transition-colors ${isSaved ? 'text-blue-600 bg-blue-50' : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'} ${isAnalyzing ? 'opacity-40 cursor-not-allowed' : ''}`}>
             {isSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
           </button>
-          {job.status === 'pending' ? (
+          {isAnalyzing ? (
+            <Badge className="text-xs border-none bg-blue-50 text-blue-500 gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" />AI…
+            </Badge>
+          ) : job.status === 'pending' ? (
             <>
               <Button variant="outline" size="sm" className="h-8 text-xs hidden sm:flex" onClick={onDiscard}>Discard</Button>
               <Button size="sm" className="text-white h-8 text-xs bg-blue-600 hover:bg-blue-700" onClick={onConfirm}>Confirm</Button>
@@ -822,121 +1128,227 @@ function JobCard({
         </div>
       </div>
 
-      {/* AI Summary */}
-      {job.aiSummary && (
-        <p className="text-xs text-gray-600 italic mb-3 pl-13">"{job.aiSummary}"</p>
-      )}
-
-      {/* Skills analysis row */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {/* Strengths */}
-        {job.strengths?.slice(0, 3).map((s) => (
-          <span key={s} className="flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
-            <TrendingUp className="w-3 h-3" />{s}
-          </span>
-        ))}
-        {/* Missing skills */}
-        {job.missingSkills?.slice(0, 3).map((s) => (
-          <span key={s} className="flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full">
-            <AlertTriangle className="w-3 h-3" />{s}
-          </span>
-        ))}
-      </div>
-
-      {/* AI Reasons */}
-      {job.aiReasons?.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {job.aiReasons.map((r, i) => (
-            <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{r}</span>
-          ))}
-        </div>
-      )}
-
-      {/* HR Emails */}
-      <div className="flex items-start gap-2 flex-wrap mb-4">
-        <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
-        <span className="text-xs text-gray-500 font-medium shrink-0 mt-0.5">HR:</span>
-        <div className="flex items-center gap-1.5 flex-wrap flex-1">
-          {/* Emails from the original listing */}
-          {job.hrEmails?.length > 0 && job.hrEmails.map((email) => (
-            <a key={email} href={`mailto:${email}`}
-              className="text-xs text-blue-600 hover:underline font-mono bg-blue-50 px-2 py-0.5 rounded">
-              {email}
-            </a>
-          ))}
-          {/* Emails found via Hunter.io lookup */}
-          {hrContacts !== null && hrContacts.map((c) => (
-            <a key={c.email} href={`mailto:${c.email}`} title={[c.position, c.confidence ? `${c.confidence}% confidence` : ''].filter(Boolean).join(' · ')}
-              className="text-xs text-purple-700 hover:underline font-mono bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
-              {c.email}
-            </a>
-          ))}
-          {/* Show lookup button when no emails at all */}
-          {(job.hrEmails?.length ?? 0) === 0 && hrContacts === null && (
-            <button onClick={lookupHrEmail} disabled={hrLoading}
-              className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded transition-colors disabled:opacity-60">
-              {hrLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
-              {hrLoading ? 'กำลังค้นหา…' : 'ค้นหา HR'}
-            </button>
-          )}
-          {hrError && <span className="text-xs text-red-500 italic">{hrError}</span>}
-          {/* Re-lookup button after getting results */}
-          {hrContacts !== null && hrContacts.length === 0 && !hrError && (
-            <span className="text-xs text-gray-400 italic">ไม่พบอีเมล HR</span>
-          )}
-        </div>
-        {/* Gmail Draft button */}
-        {gmailConnected && (
-          <button onClick={onGmailDraft}
-            className={`ml-auto flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors ${job.gmailDraftId ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-white border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200'}`}>
-            <MailOpen className="w-3 h-3" />
-            {job.gmailDraftId ? 'Draft ✓' : 'Gmail Draft'}
-          </button>
-        )}
-      </div>
-
-      {/* Cover letter + Resume */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="border border-gray-100 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">AI Cover Letter</span>
-            <div className="flex items-center gap-2">
-              <button onClick={onRegenerateLetter} disabled={isRegenerating}
-                className="text-xs text-gray-400 hover:text-blue-600 flex items-center gap-1">
-                <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
-                {isRegenerating ? 'กำลังสร้าง…' : 'สร้างใหม่'}
-              </button>
-              <button onClick={() => setShowLetter(!showLetter)}
-                className="text-xs text-blue-600 font-medium hover:underline">
-                {showLetter ? 'ย่อ' : 'แสดงทั้งหมด'}
-              </button>
-            </div>
+      {/* ── Analyzing state: show skeleton for AI content ── */}
+      {isAnalyzing ? (
+        <div className="animate-pulse space-y-3">
+          {/* AI summary skeleton */}
+          <div className="space-y-1.5">
+            <div className="h-3 bg-gray-200 rounded w-full" />
+            <div className="h-3 bg-gray-200 rounded w-3/4" />
           </div>
-          <p className={`text-xs text-gray-600 leading-relaxed ${showLetter ? '' : 'line-clamp-4'}`}>
-            {job.coverLetter ?? 'ยังไม่มี Cover Letter'}
-          </p>
-        </div>
-        <div className="border border-gray-100 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Selected Resume</span>
-            <Link href="/resumes" className="text-xs text-blue-600 font-medium hover:underline">Edit</Link>
+          {/* Skill tags skeleton */}
+          <div className="flex gap-2 flex-wrap">
+            <div className="h-5 bg-green-100 rounded-full w-20" />
+            <div className="h-5 bg-green-100 rounded-full w-24" />
+            <div className="h-5 bg-red-100 rounded-full w-16" />
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-10 bg-red-50 border border-red-100 rounded flex items-center justify-center shrink-0">
-              <FileIcon className="w-4 h-4 text-red-500" />
+          {/* AI reasons skeleton */}
+          <div className="flex gap-1.5 flex-wrap">
+            <div className="h-5 bg-blue-100 rounded-full w-24" />
+            <div className="h-5 bg-blue-100 rounded-full w-20" />
+            <div className="h-5 bg-blue-100 rounded-full w-16" />
+          </div>
+          {/* HR row */}
+          <div className="flex items-center gap-2">
+            <div className="h-3 bg-gray-200 rounded w-8" />
+            <div className="h-4 bg-gray-200 rounded w-32" />
+          </div>
+          {/* Cover letter + resume */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="border border-gray-100 rounded-lg p-4 space-y-2">
+              <div className="h-3 bg-gray-200 rounded w-24 mb-2" />
+              <div className="h-3 bg-gray-200 rounded w-full" />
+              <div className="h-3 bg-gray-200 rounded w-5/6" />
+              <div className="h-3 bg-gray-200 rounded w-4/6" />
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-gray-800 truncate">{job.resumeName || 'Resume'}</p>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {job.skills?.slice(0, 3).map((s) => (
-                  <span key={s} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{s}</span>
-                ))}
+            <div className="border border-gray-100 rounded-lg p-4">
+              <div className="h-3 bg-gray-200 rounded w-28 mb-3" />
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-10 bg-gray-200 rounded shrink-0" />
+                <div className="space-y-1.5 flex-1">
+                  <div className="h-3 bg-gray-200 rounded w-32" />
+                  <div className="flex gap-1">
+                    <div className="h-4 bg-gray-200 rounded w-12" />
+                    <div className="h-4 bg-gray-200 rounded w-10" />
+                  </div>
+                </div>
               </div>
             </div>
-            <button className="ml-auto text-gray-400 hover:text-gray-600 shrink-0"><Eye className="w-4 h-4" /></button>
           </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* AI Summary */}
+          {job.aiSummary && (
+            <p className="text-xs text-gray-600 italic mb-3 pl-13">"{job.aiSummary}"</p>
+          )}
+
+          {/* Skills analysis row */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {job.strengths?.slice(0, 3).map((s) => (
+              <span key={s} className="flex items-center gap-1 text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
+                <TrendingUp className="w-3 h-3" />{s}
+              </span>
+            ))}
+            {job.missingSkills?.slice(0, 3).map((s) => (
+              <span key={s} className="flex items-center gap-1 text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-full">
+                <AlertTriangle className="w-3 h-3" />{s}
+              </span>
+            ))}
+          </div>
+
+          {/* AI Reasons */}
+          {job.aiReasons?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {job.aiReasons.map((r, i) => (
+                <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{r}</span>
+              ))}
+            </div>
+          )}
+
+          {/* HR / Contact section */}
+          <div className="flex items-start gap-2 flex-wrap mb-4">
+            <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
+            <span className="text-xs text-gray-500 font-medium shrink-0 mt-0.5">ติดต่อ:</span>
+            <div className="flex items-center gap-1.5 flex-wrap flex-1">
+
+              {/* ── Emails from the original job listing ── */}
+              {job.hrEmails?.filter((email): email is string => !!email).map((email) => (
+                <a key={email} href={`mailto:${email}`}
+                  className="text-xs text-blue-600 hover:underline font-mono bg-blue-50 px-2 py-0.5 rounded">
+                  {email}
+                </a>
+              ))}
+
+              {/* ── Contacts found via AI/DDG lookup ── */}
+              {hrContacts !== null && (() => {
+                // Flatten into separate deduplicated lists for clean display
+                const emails  = hrContacts.filter((c) => c.email);
+                const phones  = hrContacts.filter((c) => c.phone && !c.email);
+                const sites   = hrContacts.filter((c) => c.website && !c.email && !c.phone);
+                const source  = hrContacts[0]?.source; // 'ai' | 'web'
+
+                return (
+                  <>
+                    {/* Emails */}
+                    {emails.map((c) => {
+                      const isHr = c.type === 'hr';
+                      return (
+                        <span key={c.email} className="inline-flex items-center gap-0.5">
+                          <a href={`mailto:${c.email}`}
+                            title={[c.position, isHr ? 'HR/Recruiter' : 'ติดต่อบริษัท'].filter(Boolean).join(' · ')}
+                            className={`text-xs hover:underline font-mono px-2 py-0.5 rounded-l border ${
+                              isHr ? 'text-purple-700 bg-purple-50 border-purple-200' : 'text-gray-700 bg-gray-50 border-gray-200'
+                            }`}>
+                            {c.email}
+                          </a>
+                          <span className={`text-xs px-1.5 py-0.5 rounded-r border-y border-r font-medium ${
+                            isHr ? 'bg-purple-100 text-purple-600 border-purple-200' : 'bg-gray-100 text-gray-500 border-gray-200'
+                          }`}>
+                            {isHr ? 'HR' : 'บริษัท'}
+                          </span>
+                        </span>
+                      );
+                    })}
+
+                    {/* Phone numbers */}
+                    {phones.map((c) => (
+                      <a key={c.phone} href={`tel:${(c.phone ?? '').replace(/[\s\-]/g, '')}`}
+                        className="inline-flex items-center gap-1 text-xs text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-2 py-0.5 rounded font-mono">
+                        <Phone className="w-3 h-3 text-gray-400" />
+                        {c.phone}
+                      </a>
+                    ))}
+
+                    {/* Website (show domain, not "สมัครงาน") */}
+                    {sites.map((c) => {
+                      const domain = c.website ?? '';
+                      const href = domain.startsWith('http') ? domain : `https://${domain}`;
+                      return (
+                        <a key={domain} href={href} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded">
+                          <Globe className="w-3 h-3" />
+                          {domain}
+                        </a>
+                      );
+                    })}
+
+                    {/* Source label */}
+                    {(emails.length > 0 || phones.length > 0 || sites.length > 0) && (
+                      <span className="text-xs text-gray-300 italic ml-0.5">
+                        {source === 'ai' ? '· AI' : '· web'}
+                      </span>
+                    )}
+                  </>
+                );
+              })()}
+
+              {/* Lookup button */}
+              {(job.hrEmails?.length ?? 0) === 0 && hrContacts === null && (
+                <button onClick={lookupHrEmail} disabled={hrLoading}
+                  className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded transition-colors disabled:opacity-60">
+                  {hrLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                  {hrLoading ? 'กำลังค้นหา…' : 'ค้นหา HR / ติดต่อ'}
+                </button>
+              )}
+              {hrError && <span className="text-xs text-red-500 italic">{hrError}</span>}
+              {hrContacts !== null && hrContacts.length === 0 && !hrError && (
+                <span className="text-xs text-gray-400 italic">ไม่พบข้อมูลติดต่อ</span>
+              )}
+            </div>
+            {gmailConnected && (
+              <button onClick={onGmailDraft}
+                className={`ml-auto flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-colors ${job.gmailDraftId ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-600 bg-white border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200'}`}>
+                <MailOpen className="w-3 h-3" />
+                {job.gmailDraftId ? 'Draft ✓' : 'Gmail Draft'}
+              </button>
+            )}
+          </div>
+
+          {/* Cover letter + Resume */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="border border-gray-100 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">AI Cover Letter</span>
+                <div className="flex items-center gap-2">
+                  <button onClick={onRegenerateLetter} disabled={isRegenerating}
+                    className="text-xs text-gray-400 hover:text-blue-600 flex items-center gap-1">
+                    <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+                    {isRegenerating ? 'กำลังสร้าง…' : 'สร้างใหม่'}
+                  </button>
+                  <button onClick={() => setShowLetter(!showLetter)}
+                    className="text-xs text-blue-600 font-medium hover:underline">
+                    {showLetter ? 'ย่อ' : 'แสดงทั้งหมด'}
+                  </button>
+                </div>
+              </div>
+              <p className={`text-xs text-gray-600 leading-relaxed ${showLetter ? '' : 'line-clamp-4'}`}>
+                {job.coverLetter ?? 'ยังไม่มี Cover Letter'}
+              </p>
+            </div>
+            <div className="border border-gray-100 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Selected Resume</span>
+                <Link href="/resumes" className="text-xs text-blue-600 font-medium hover:underline">Edit</Link>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-10 bg-red-50 border border-red-100 rounded flex items-center justify-center shrink-0">
+                  <FileIcon className="w-4 h-4 text-red-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-gray-800 truncate">{job.resumeName || 'Resume'}</p>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {job.skills?.slice(0, 3).map((s) => (
+                      <span key={s} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{s}</span>
+                    ))}
+                  </div>
+                </div>
+                <button className="ml-auto text-gray-400 hover:text-gray-600 shrink-0"><Eye className="w-4 h-4" /></button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

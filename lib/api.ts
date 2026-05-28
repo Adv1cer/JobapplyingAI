@@ -55,6 +55,17 @@ export interface JobMatch {
   companyInfo?: Record<string, any>;
   gmailDraftId?: string;
   scrapedAt: string;
+  postedAt?: string;
+  isStale?: boolean;
+  isExpired?: boolean;
+  isReanalyzing?: boolean;
+}
+
+export interface JobMatchPage {
+  jobs: JobMatch[];
+  total: number;
+  page: number;
+  hasMore: boolean;
 }
 
 export interface DashboardStats {
@@ -73,6 +84,8 @@ export interface ScanSession {
   errorMessage?: string;
   createdAt: string;
   completedAt?: string;
+  /** Present when session is a resume re-analysis (not a fresh scan) */
+  filters?: { reanalyze?: boolean; [key: string]: any };
 }
 
 export interface SavedJob {
@@ -94,7 +107,8 @@ export interface GmailStatus {
 
 export const jobsApi = {
   getDashboard: () => api.get<DashboardStats>('/jobs/dashboard'),
-  getMatches: () => api.get<JobMatch[]>('/jobs/matches'),
+  getMatches: (page = 1, limit = 10, includeExpired = false) =>
+    api.get<JobMatchPage>(`/jobs/matches?page=${page}&limit=${limit}&includeExpired=${includeExpired}`),
   getSaved: () => api.get<SavedJob[]>('/jobs/saved'),
   confirm: (id: string) => api.post<JobMatch>(`/jobs/${id}/confirm`, {}),
   discard: (id: string) => api.delete<void>(`/jobs/${id}/discard`),
@@ -103,7 +117,7 @@ export const jobsApi = {
   regenerateCoverLetter: (id: string, language?: 'TH' | 'EN') =>
     api.post<{ coverLetter: string }>(`/jobs/${id}/cover-letter`, { language }),
   lookupHrEmail: (id: string) =>
-    api.get<{ company: string; contacts: Array<{ email: string; firstName?: string; lastName?: string; position?: string; confidence?: number }> }>(`/jobs/${id}/hr-email`),
+    api.get<{ company: string; contacts: Array<{ email?: string; phone?: string; website?: string; type?: 'hr' | 'general'; source?: string; firstName?: string; lastName?: string; position?: string; confidence?: number }> }>(`/jobs/${id}/hr-email`),
 };
 
 export const resumeApi = {

@@ -8,10 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import {
-  Send, ArrowLeft, Plus, Trash2, Save, Loader2,
+  Send, ArrowLeft, Plus, Trash2, Save, Loader2, CheckCircle2,
   User, GraduationCap, Briefcase, Wrench, Globe, Target,
 } from 'lucide-react';
-import { api, resumeApi, scanApi } from '@/lib/api';
+import { api, resumeApi } from '@/lib/api';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Education { school: string; degree: string; field: string; startYear: string; endYear: string; gpa?: string; }
@@ -51,8 +51,6 @@ export default function ResumesPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [reanalyzing, setReanalyzing] = useState(false);
-  const [reanalyzeProgress, setReanalyzeProgress] = useState<{ processed: number; total: number } | null>(null);
 
   useEffect(() => {
     api.get<ResumeData & { education: any; workHistory: any; skills: any; languages: any }>('/resume')
@@ -120,35 +118,18 @@ export default function ResumesPage() {
         desiredSalaryMax: form.desiredSalaryMax ? Number(form.desiredSalaryMax) : null,
       });
       setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
 
-      // If there are existing job matches, queue re-analysis automatically
       const sessionId = result?.reanalyzeSession;
       if (sessionId) {
-        setReanalyzing(true);
-        setReanalyzeProgress({ processed: 0, total: 0 });
-        pollReanalyze(sessionId);
+        // Re-analysis queued — redirect to dashboard so user sees live animation there
+        setTimeout(() => router.push('/dashboard'), 1200);
+      } else {
+        // No existing matches to reanalyze — just show saved state briefly
+        setTimeout(() => setSaved(false), 3000);
       }
     } catch (err: any) {
       alert(err.message ?? 'Save failed');
     } finally { setSaving(false); }
-  }
-
-  function pollReanalyze(sessionId: string) {
-    const interval = setInterval(async () => {
-      try {
-        const s = await scanApi.getStatus(sessionId);
-        setReanalyzeProgress({ processed: s.processed ?? 0, total: s.totalFound ?? 0 });
-        if (s.status === 'done' || s.status === 'failed') {
-          clearInterval(interval);
-          setReanalyzing(false);
-          setTimeout(() => setReanalyzeProgress(null), 4000);
-        }
-      } catch {
-        clearInterval(interval);
-        setReanalyzing(false);
-      }
-    }, 2000);
   }
 
   if (loading) {
@@ -180,26 +161,18 @@ export default function ResumesPage() {
           <span className="text-gray-300 hidden md:inline">/</span>
           <span className="text-sm text-gray-600 font-medium hidden sm:inline">My Resume</span>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 gap-2 shrink-0">
+        <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 gap-2 shrink-0 text-white">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           <span>{saved ? 'บันทึกแล้ว ✓' : 'บันทึก'}</span>
         </Button>
       </div>
 
-      {/* Re-analyze progress banner */}
-      {reanalyzeProgress !== null && (
-        <div className={`flex items-center gap-3 px-6 py-3 text-sm border-b ${reanalyzing ? 'bg-blue-50 border-blue-100 text-blue-700' : 'bg-green-50 border-green-100 text-green-700'}`}>
-          {reanalyzing
-            ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-            : <span className="text-base">✅</span>
-          }
-          {reanalyzing
-            ? `กำลังวิเคราะห์งานใหม่ด้วย Resume ล่าสุด… ${reanalyzeProgress.processed}/${reanalyzeProgress.total || '?'} รายการ`
-            : `วิเคราะห์เสร็จแล้ว ${reanalyzeProgress.processed} รายการ — ดูผลได้ที่ Dashboard`
-          }
-          {!reanalyzing && (
-            <Link href="/dashboard" className="ml-auto text-xs font-medium underline underline-offset-2">ไปที่ Dashboard →</Link>
-          )}
+      {/* Redirect banner — shown while waiting to navigate to dashboard */}
+      {saved && (
+        <div className="flex items-center gap-3 px-6 py-3 text-sm border-b bg-green-50 border-green-100 text-green-700">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          บันทึก Resume แล้ว — กำลังไปยัง Dashboard เพื่อวิเคราะห์งานด้วย Resume ใหม่…
+          <Loader2 className="w-3.5 h-3.5 animate-spin ml-1" />
         </div>
       )}
 
@@ -413,7 +386,7 @@ export default function ResumesPage() {
 
         {/* Save button bottom */}
         <div className="flex justify-end pb-8">
-          <Button onClick={handleSave} disabled={saving} size="lg" className="bg-blue-600 hover:bg-blue-700 gap-2 px-8">
+          <Button onClick={handleSave} disabled={saving} size="lg" className="bg-blue-600 hover:bg-blue-700 gap-2 px-8 text-white">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saved ? 'บันทึกแล้ว ✓' : 'บันทึก Resume'}
           </Button>
